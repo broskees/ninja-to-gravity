@@ -120,6 +120,10 @@ class Ninja_Forms {
 	public static function calculate_field_widths( $form_export ) {
 		$spans = [];
 		foreach ( $form_export['settings']['formContentData'] as $content_data ) {
+			if ( ! is_array( $content_data ) ) {
+				continue;
+			}
+
 			foreach ( $content_data['formContentData'] as $row ) { // Row.
 				foreach ( $row['cells'] as $cell ) { // Column.
 					$percent_width = intval( $cell['width'] );
@@ -144,6 +148,10 @@ class Ninja_Forms {
 		$page_data = [];
 		$order     = 0;
 		foreach ( $form_export['settings']['formContentData'] as $content_data ) {
+			if ( ! is_array( $content_data ) ) {
+				continue;
+			}
+
 			$page_data[ $order ] = $content_data['title'];
 			$count               = 0;
 			foreach ( $content_data['formContentData'] as $row ) { // Row.
@@ -223,7 +231,7 @@ class Ninja_Forms {
 
 			$arguments = [
 				'type'                 => $type,
-				'layoutGridColumnSpan' => $spans[ $nf_field['key'] ],
+				'layoutGridColumnSpan' => $spans[ $nf_field['key'] ] ?? 1,
 				'isRequired'           => ( '1' === $is_required || 1 === $is_required ),
 				'placeholder'          => $nf_field['placeholder'] ?? '',
 				'cssClass'             => implode( ' ', $css_classes ),
@@ -337,12 +345,14 @@ class Ninja_Forms {
 		}
 
 		$form_id = GFAPI::add_form( $gravity_form );
-		
-		$webhook_handler = new GF_Webhooks();
-		foreach ( $webhooks as $webhook ) {
-			$webhook_handler->insert_feed( $form_id, true, $webhook );
+
+		if (class_exists('GF_Webhooks')) {
+			$webhook_handler = new GF_Webhooks();
+			foreach ( $webhooks as $webhook ) {
+				$webhook_handler->insert_feed( $form_id, true, $webhook );
+			}
 		}
-		
+
 		if ( empty( $form_id ) ) {
 			return false;
 		}
@@ -524,7 +534,7 @@ class Ninja_Forms {
 	 * @return string The converted placeholder. 
 	 */
 	public static function convert_field_merge_tag( $field ) {
-		$field    = self::$mapping[ $field ];
+		$field    = self::$mapping[ $field ] ?? ['field' => $field, 'order' => 0];
 		$gf_field = sprintf( '{%s:%s}', $field['field'], $field['order'] );
 		return $gf_field;
 	}
